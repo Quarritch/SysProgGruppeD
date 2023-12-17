@@ -5,7 +5,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <unistd.h>
-#include "programme/logWert.h"
+#include "logWert.h"
 
 #define SHM_KEY 1100
 #define SHM_SIZE 1024
