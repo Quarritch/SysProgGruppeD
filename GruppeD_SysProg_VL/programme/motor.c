@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdbool.h>
-#include "programme/logWert.h"
+#include "logWert.h"
 
 #define SHM_KEY 1100
 #define SHM_SIZE 1024
