@@ -109,7 +109,7 @@ float logWert(char *name, char *arg, float value){
 
 
 		write2log(wert, pfadLog);
-		printf("Log-Einträge wurden erstellt und in %s gespeichert.\n",pfadLog);
+		//printf("Log-Einträge wurden erstellt und in %s gespeichert.\n",pfadLog);
 		return 0;
 		}
 		else
