@@ -5,7 +5,7 @@
 #include <sys/shm.h>
 #include <math.h>
 #include <time.h>
-#include "./programme/logWert.h"        //Einbinden der Bibliothek "logWert.h"
+#include "logWert.h"        //Einbinden der Bibliothek "logWert.h"
 
 #define SHM_KEY 1101            //Schlüssel der Shared Memory
 #define SHM_SIZE 1024           //Größe der Shared Memory
@@ -65,7 +65,10 @@ float sineGen() {
 int main(int argc, char *argv[]) {
     int shmid;                 //Rückgabe Shared Memory -> 0 bedeutet vorhanden
     key_t key = SHM_KEY;       //Schlüssel des Shared Memory Segments
-    float *shm, *data;         //Wert in der Shared Memory
+    float *shm;                //Wert in der Shared Memory
+
+    //Dateiname zum kontrollierten Beenden des Prozesses
+    const char *filename = "./logs/ctrlfinish";
 
     shmid = shmget(key, SHM_SIZE, 0666);        // Verbindung zum vorhandenen Shared Memory herstellen (alle Rechte)        
     if (shmid == -1) {              //Errormeldung, Shared Memory nicht erzeugt
@@ -99,6 +102,16 @@ int main(int argc, char *argv[]) {
         *shm = temp;          //Schreiben der Temperatur in den Shared Memory
 
         logWert("sensor", "write", temp);           //Loggen der Temperatur
+
+        // Versuche, die Datei zu öffnen
+        FILE *file = fopen(filename, "r");
+
+        // Überprüfe, ob das Öffnen erfolgreich war
+        if (file != NULL) {
+            // Schließe die Datei nach der Überprüfung
+            fclose(file);
+            break;
+        }      
     }
     
     shmdt(shm);         //Trennt den Shared Memory
