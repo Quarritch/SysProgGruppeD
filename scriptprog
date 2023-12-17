@@ -1,9 +1,11 @@
 ##################################################################
 #### Programm zum Aufrufen verschiedener C-Skripte mit Bash
-#### und Fehlererkennung sowie Erzeugen von Kindprozessen
+#### und Fehlererkennung sowie Loggen von Shared Memory und
+#### Systemaufrufen
 #### 
 #### Gruppe: D
-#### Teilnehmer: Timo Heider, Dirk Frerichs, Martin Pfeiffer, Odai Alheshan, Arne Nürnberg
+#### Teilnehmer: Timo Heider, Dirk Frerichs, Martin Pfeiffer,
+####		 Odai Alheshan, Arne Nürnberg
 #### Datum: 12.12.2023
 ##################################################################
 
@@ -11,31 +13,29 @@
 #Errors stoppen das Programm
 set -euo pipefail
 
-#Funktion zum Aufruf von C-Skripten mit Überwachung der PID
+#Funktion zum Aufruf von C-Skripten mit Überwachung der PID und Shared Memory
 function start_c_programm () {
 	
-	local programm_name=$1
+	local programm_name=$1			#Übergabe Programmname
 
-	echo "$1"
-
-	if [ "$programm_name" = "sensor" ]; then
+	echo "$programm_name is running"	#Bestätigung, dass Programm läuft
 	
-		local inputvalue=$2
+	if [ "$programm_name" = "sensor" ]; then	#Wenn sensor aufgerufen werden soll, muss 2. Argument verarbeitet werden
+	
+		local inputvalue=$2			#Sinus oder Rechteckfunktion
 
-		echo "$2"
-
-		strace -o ./logs/$programm_name-syscall.log ./programme/$programm_name "$inputvalue" &
+		strace -o ./logs/$programm_name-syscall.log ./programme/$programm_name "$inputvalue" &		#Loggen der Systemaufrufe und Programmaufruf
 	else
 		
-		strace -o ./logs/$programm_name-syscall.log ./programme/$programm_name &
+		strace -o ./logs/$programm_name-syscall.log ./programme/$programm_name &		#Loggen der Systemaufrufe und Programmaufruf
 		
 	fi
 
-	pid=$!
+	pid=$!			#PID des letzten aufgerufenen Prozesses
 
 
-	#strace -f ./$programm_name 2>&1 | grep "shm"
-	ipcs -mp $pid > ./logs/$programm_name-ipcs.log
+	#strace -f ./$programm_name 2>&1 | grep "shm"		
+	ipcs -mp $pid > ./logs/$programm_name-ipcs.log		#Loggen der Shared Memory Segmente
 			
 	sleep 1
 	
@@ -44,83 +44,65 @@ function start_c_programm () {
 
 
 #Hauptprogramm
-programm1="control"
 
-case $1 in
-	"sinus" | "rechteck")
-	programm2="sensor"
+programm1="control"			#Benennung nach Programmnamen
+
+case $1 in				#Auswahl der Eingangsfunktion durch Argument in bash
+	"sinus" | "rechteck")		#Sinus oder Rechteck
+	programm2="sensor"		#Benennung nach Programmnamen	
 	;;
 
-	*)
-	echo "Usage: [sinus,rechteck]"
-	exit 1
+	*)				#Errormeldung bei falschen Argumenten
+	echo "Main: Usage: [sinus,rechteck]"
+	exit 
 	;;
 
 esac
 
-programm3="motor"
+programm3="motor"			#Benennung nach Programmnamen
 
 
 
-if [ -d "./logs" ]; then
+if [ -d "./logs" ]; then		#Falls ./logs existiert -> löschen und neu erzeugen
 	rm -r ./logs
 	mkdir ./logs
 	mkdir ./logs/werte
-else
+else					#Falls ./logs nicht existiert -> erzeugen
 	mkdir ./logs
 	mkdir ./logs/werte
 fi
 
 
-start_c_programm "$programm1" 
+start_c_programm "$programm1" 		#Aufruf Funktion zum Aufrufen der Programme
 
-start_c_programm "$programm2" "$1"
+start_c_programm "$programm2" "$1"	#Aufruf Funktion zum Aufrufen der Programme mit Argument (Sinus, Rechteck)	
 
-start_c_programm "$programm3"
-
-
+start_c_programm "$programm3"		#Aufruf Funktion zum Aufrufen der Programme mit Argument
 
 
-while [ 1 ]
+counter=0				#Zählvariable Fehlaufrufe von Programmen
+
+while [ 1 ]		#unendliche Schleife
 do
-	if [ -f "./logs/finish.log" ]; then
-		rm ./logs/finish.log
-		
-		
-		if pgrep -x "$programm1" > /dev/null; then
-			pkill -SIGTERM "$programm1"
-			echo "Programm $programm1 wurde beendet"
-		else
-			echo "Programm $programm1 wurde bereits beendet"
-		fi
+	read -t 5 -p "Geben Sie *exit* ein (oder warten Sie 5 Sekunden zum Fortfahren): " userInput
 
-
-		if pgrep -x "$programm1" > /dev/null; then
-			pkill -SIGTERM "$programm2"
-			echo "Programm $programm2 wurde beendet"
-		else
-			echo "Programm $programm1 wurde bereits beendet"
-		fi	
-
-	
-		if pgrep -x "$programm1" > /dev/null; then
-			pkill -SIGTERM "$programm3"
-			echo "Programm $programm3 wurde beendet"
-		else
-			echo "Programm $programm3 wurde bereits beendet"
-		fi		
-		
-		if pgrep -x "$0" > /dev/null; then
-			echo "Programm $0 wird beendet!"
-			pkill -SIGTERM $0	
-		fi
-		
-	else
+    	if [ "$userInput" = "exit" ] || [ "$counter" = "4" ]; then
+        	echo "Das Programm wird nun heruntergefahren"
+		mkdir ./logs/finish
+        	while [ 1 ]
+		do
+			if [ pgrep -x "$programm1" > /dev/null -eq 1 ] && [ pgrep -x > /dev/null "$programm2" -eq 1 ] && [ pgrep -x "$programm3" > /dev/null -eq 1 ]; then
+			echo "Hauptprogramm $0 wird beendet!"
+			pkill -SIGTERM "$0"
+    	
+	else		#Abrufen
 
 		if pgrep -x "$programm1" > /dev/null; then
 			echo "Programm $programm1 runs at $(date)" > ./logs/$programm1-run.log
 		else
 			start_c_programm "$programm1"
+			echo "$programm1 wurde erneut gestartet"
+                        ((counter++))
 		fi
 
 
@@ -128,6 +110,8 @@ do
 			echo "Programm $programm2 runs at $(date)" > ./logs/$programm2-run.log
 		else
 			start_c_programm "$programm2" "$1" 
+			echo "$programm2 wurde erneut gestartet"
+                        ((counter++))
 		fi
 
 
@@ -135,6 +119,8 @@ do
 			echo "Programm $programm3 runs at $(date)" > ./logs/$programm3-run.log
 		else
 			start_c_programm "$programm3"
+			echo "$programm3 wurde erneut gestartet"
+                        ((counter++))
 		fi
 	fi
 
