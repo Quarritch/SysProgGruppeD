@@ -94,6 +94,8 @@ do
 			if [ pgrep -x "$programm1" > /dev/null -eq 1 ] && [ pgrep -x > /dev/null "$programm2" -eq 1 ] && [ pgrep -x "$programm3" > /dev/null -eq 1 ]; then
 			echo "Hauptprogramm $0 wird beendet!"
 			pkill -SIGTERM "$0"
+			fi
+		done
     	
 	else		#Abrufen
 
