@@ -36,7 +36,7 @@ function start_c_programm () {
 
 
 	#strace -f ./$programm_name 2>&1 | grep "shm"		
-	ipcs -mp $pid > ./logs/$programm_name-ipcs.log		#Loggen der Shared Memory Segmente
+	ipcs -mp $pid > ./logs/$programm_name-ipcs.log		#Loggen der Shared Memory Segmente des letzten Prozesses
 			
 	sleep 1
 	
@@ -83,13 +83,13 @@ start_c_programm "$programm3"		#Aufruf Funktion zum Aufrufen der Programme
 
 counter=0				#Zählvariable Fehlaufrufe von Programmen
 
-while [ 1 ] 		#unendliche Schleife
+while [ 1 ] 		#Unendliche Schleife
 
 do
 
     	if read -t 5 -p "Programm durch Eingabe beenden: " userInput; then		#Wenn User exit eingegeben oder counter 4 erreicht hat, Programm herunterfahren
         	echo "Das Programm wird nun heruntergefahren"
-		mkdir ./logs/finish							#Logdatei für andere C-Dateien erzeugen, diese beenden sich nach erstellen der Logdatei selbst
+		mkdir ./logs/finish							#Logdatei für andere C-Dateien erzeugen, diese beenden sich nach Erstellen der Logdatei selbst
         	while [ 1 ]				
 		do
 			if ! pgrep -x "$programm1" > /dev/null && ! pgrep -x "$programm2" > /dev/null && ! pgrep -x "$programm3" > /dev/null; then	#Abfrage, ob alle Programme heruntergefahren sind
@@ -114,21 +114,21 @@ do
 		fi
 
 
-		if pgrep -x "$programm2" > /dev/null; then			#Abfrage Programmname in Prozessen vorhanden	
+		if pgrep -x "$programm2" > /dev/null; then				
 			echo "Programm $programm2 runs at $(date)" > ./logs/$programm2-run.log
 		else
-			start_c_programm "$programm2" "$1" 			#Wenn nicht läuft, wieder aufrufen
+			start_c_programm "$programm2" "$1" 			
 			echo "$programm2 wurde erneut gestartet"
-                        ((counter++))						#counter inkrementieren
+                        ((counter++))						
 		fi
 
 
-		if pgrep -x "$programm3" > /dev/null; then			#Abfrage Programmname in Prozessen vorhanden
+		if pgrep -x "$programm3" > /dev/null; then			
 			echo "Programm $programm3 runs at $(date)" > ./logs/$programm3-run.log
 		else
-			start_c_programm "$programm3"				#Wenn nicht läuft, wieder aufrufen
+			start_c_programm "$programm3"				
 			echo "$programm3 wurde erneut gestartet"
-                        ((counter++))						#counter inkrementieren
+                        ((counter++))						
 		fi
 	fi
 
