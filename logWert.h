@@ -59,7 +59,7 @@ float checkWert(char *pfadLog){
 float logWert(char *name, char *arg, float value){
 
 	float ruckwert;					//Rückgabewert
-	char pfadLog[100] = "../logs/werte/";		//Pfad
+	char pfadLog[100] = "./logs/werte/";		//Pfad
 	char dateiname[100];				//Dateiname
 	char action[100];				//Aktion
 	float wert = 0.0;				//Deklaration Wert zum Schreiben
