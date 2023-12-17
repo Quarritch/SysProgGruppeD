@@ -93,7 +93,7 @@ do
 		do
 			if [ pgrep -x "$programm1" > /dev/null -eq 1 ] && [ pgrep -x > /dev/null "$programm2" -eq 1 ] && [ pgrep -x "$programm3" > /dev/null -eq 1 ]; then	#Abfrage, ob alle Programme heruntergefahren sind
 			echo "Hauptprogramm $0 wird beendet!"
-			pkill -SIGTERM "$0"				#Hauptprogramm beenden
+			exit 0				#Hauptprogramm beenden
 			fi
 		done
     	
@@ -108,21 +108,21 @@ do
 		fi
 
 
-		if pgrep -x "$programm2" > /dev/null; then			#Abfrage Programmname in Prozessen vorhanden	
+		if pgrep -x "$programm2" > /dev/null; then				
 			echo "Programm $programm2 runs at $(date)" > ./logs/$programm2-run.log
 		else
-			start_c_programm "$programm2" "$1" 			#Wenn nicht läuft, wieder aufrufen
+			start_c_programm "$programm2" "$1" 			
 			echo "$programm2 wurde erneut gestartet"
-                        ((counter++))						#counter inkrementieren
+                        ((counter++))						
 		fi
 
 
-		if pgrep -x "$programm3" > /dev/null; then			#Abfrage Programmname in Prozessen vorhanden
+		if pgrep -x "$programm3" > /dev/null; then			
 			echo "Programm $programm3 runs at $(date)" > ./logs/$programm3-run.log
 		else
-			start_c_programm "$programm3"				#Wenn nicht läuft, wieder aufrufen
+			start_c_programm "$programm3"				
 			echo "$programm3 wurde erneut gestartet"
-                        ((counter++))						#counter inkrementieren
+                        ((counter++))						
 		fi
 	fi
 
