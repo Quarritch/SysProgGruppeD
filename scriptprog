@@ -1,0 +1,144 @@
+##################################################################
+#### Programm zum Aufrufen verschiedener C-Skripte mit Bash
+#### und Fehlererkennung sowie Erzeugen von Kindprozessen
+#### 
+#### Gruppe: D
+#### Teilnehmer: Timo Heider, Dirk Frerichs, Martin Pfeiffer, Odai Alheshan, Arne Nürnberg
+#### Datum: 12.12.2023
+##################################################################
+
+
+#Errors stoppen das Programm
+set -euo pipefail
+
+#Funktion zum Aufruf von C-Skripten mit Überwachung der PID
+function start_c_programm () {
+	
+	local programm_name=$1
+
+	echo "$1"
+
+	if [ "$programm_name" = "sensor" ]; then
+	
+		local inputvalue=$2
+
+		echo "$2"
+
+		strace -o ./logs/$programm_name-syscall.log ./programme/$programm_name "$inputvalue" &
+	else
+		
+		strace -o ./logs/$programm_name-syscall.log ./programme/$programm_name &
+		
+	fi
+
+	pid=$!
+
+
+	#strace -f ./$programm_name 2>&1 | grep "shm"
+	ipcs -mp $pid > ./logs/$programm_name-ipcs.log
+			
+	sleep 1
+	
+}
+
+
+
+#Hauptprogramm
+programm1="control"
+
+case $1 in
+	"sinus" | "rechteck")
+	programm2="sensor"
+	;;
+
+	*)
+	echo "Usage: [sinus,rechteck]"
+	exit 1
+	;;
+
+esac
+
+programm3="motor"
+
+
+
+if [ -d "./logs" ]; then
+	rm -r ./logs
+	mkdir ./logs
+	mkdir ./logs/werte
+else
+	mkdir ./logs
+	mkdir ./logs/werte
+fi
+
+
+start_c_programm "$programm1" 
+
+start_c_programm "$programm2" "$1"
+
+start_c_programm "$programm3"
+
+
+
+
+while [ 1 ]
+do
+	if [ -f "./logs/finish.log" ]; then
+		rm ./logs/finish.log
+		
+		
+		if pgrep -x "$programm1" > /dev/null; then
+			pkill -SIGTERM "$programm1"
+			echo "Programm $programm1 wurde beendet"
+		else
+			echo "Programm $programm1 wurde bereits beendet"
+		fi
+
+
+		if pgrep -x "$programm1" > /dev/null; then
+			pkill -SIGTERM "$programm2"
+			echo "Programm $programm2 wurde beendet"
+		else
+			echo "Programm $programm1 wurde bereits beendet"
+		fi	
+
+	
+		if pgrep -x "$programm1" > /dev/null; then
+			pkill -SIGTERM "$programm3"
+			echo "Programm $programm3 wurde beendet"
+		else
+			echo "Programm $programm3 wurde bereits beendet"
+		fi		
+		
+		if pgrep -x "$0" > /dev/null; then
+			echo "Programm $0 wird beendet!"
+			pkill -SIGTERM $0	
+		fi
+		
+	else
+
+		if pgrep -x "$programm1" > /dev/null; then
+			echo "Programm $programm1 runs at $(date)" > ./logs/$programm1-run.log
+		else
+			start_c_programm "$programm1"
+		fi
+
+
+		if pgrep -x "$programm2" > /dev/null; then	
+			echo "Programm $programm2 runs at $(date)" > ./logs/$programm2-run.log
+		else
+			start_c_programm "$programm2" "$1" 
+		fi
+
+
+		if pgrep -x "$programm3" > /dev/null; then
+			echo "Programm $programm3 runs at $(date)" > ./logs/$programm3-run.log
+		else
+			start_c_programm "$programm3"
+		fi
+	fi
+
+sleep 1
+
+done
+
